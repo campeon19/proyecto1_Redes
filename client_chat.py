@@ -43,7 +43,6 @@ class GetListContacts(slixmpp.ClientXMPP):
         contactos = []
         roster = self.roster
         for jid in roster:
-            self.getjidbare
             contactos.append(jid)
 
         self.disconnect()
@@ -53,6 +52,7 @@ class GetListContacts(slixmpp.ClientXMPP):
         print("Lista de contactos:")
         for contact in contactos:
             print(contact)
+        print(roster)
 
 
 class MCRoom(slixmpp.ClientXMPP):
@@ -81,8 +81,6 @@ class MCRoom(slixmpp.ClientXMPP):
     #     if presence['muc']['nick'] != self.nick:
     #         print("%s has come online" % presence['muc']['nick'])
 
-# create account using XEP-0077: In-Band Registration
-
 
 class AddnewContact(slixmpp.ClientXMPP):
     def __init__(self, jid, password, name):
@@ -99,14 +97,36 @@ class AddnewContact(slixmpp.ClientXMPP):
         self.disconnect()
 
 
-class CreateAccount(slixmpp.ClientXMPP):
-    def __init__(self, jid, password):
+class GetContactInfo(slixmpp.ClientXMPP):
+    def __init__(self, jid, password, contact):
         slixmpp.ClientXMPP.__init__(self, jid, password)
+        self.contact = contact
         self.add_event_handler("session_start", self.start)
 
     async def start(self, event):
         self.send_presence()
         await self.get_roster()
+        self.register_plugin('xep_0030')
+        self.register_plugin('xep_0077')
+        self.register_plugin('xep_0199')
+        self.register_plugin('xep_0054')
+        contactos = []
+        roster = self.client_roster
+        for jid in roster:
+            contactos.append(jid)
+        if self.contact in contactos:
+            for x in range(0, 10):
+                print("")
+            print("El contacto existe")
+            print("Mostrando información del contacto: " + self.contact)
+            print(roster[self.contact])
+            # for key, value in roster[self.contact].items():
+            #     print(key, value)
+            for x in range(0, 10):
+                print("")
+        else:
+            print("El contacto no existe")
+
         self.disconnect()
 
 
@@ -176,7 +196,7 @@ def menu():
     1. Send message
     2. Get list contacts
     3. Send message in group chat
-    4. Create new account
+    4. Mostrar detalles de contacto
     5. Delete account
     6. Add new contact
     7. Change status
@@ -200,8 +220,11 @@ if __name__ == '__main__':
     # parser.add_argument("-m", "--message", dest="message",
     #                     help="message to send")
 
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(levelname)-8s %(message)s')
+    # logging.basicConfig(level=logging.DEBUG,
+    #                     format='%(levelname)-8s %(message)s')
+
+    # logging.basicConfig(level=args.loglevel,
+    #                     format='%(levelname)-8s %(message)s')
 
     print('Bienvenido al chat usando el protocolo xmpp')
 
@@ -213,7 +236,7 @@ if __name__ == '__main__':
         createNewAccount(jid, password)
 
     print('Inicio de sesion')
-    usuario = 'chrisbot3@alumchat.fun'
+    usuario = 'chrisbot@alumchat.fun'
     password = getpass('Ingrese su contraseña: ')
 
     # usuario = 'christianp@alumchat.fun'
@@ -248,7 +271,10 @@ if __name__ == '__main__':
             client.connect()
             client.process(forever=False)
         elif opcion == '4':
-            pass
+            contact = input('Ingrese el nombre del contacto: ')
+            client = GetContactInfo(usuario, password, contact)
+            client.connect()
+            client.process(forever=False)
         elif opcion == '5':
             print('Borrando cuenta')
             print("Esta seguro de borrar su cuenta?")
