@@ -1,7 +1,6 @@
 
 import logging
 from getpass import getpass
-from argparse import ArgumentParser
 import asyncio
 import xmpp
 import os
@@ -26,11 +25,6 @@ class SendMsg(slixmpp.ClientXMPP):
         self.send_message(mto=self.to,
                           mbody=self.message, mtype='chat')
         self.disconnect()
-
-    # def send_msg(self, to, message):
-    #     self.send_message(mto=to,
-    #                       mbody=message, mtype='chat')
-    #     self.disconnect()
 
 
 class GetListContacts(slixmpp.ClientXMPP):
@@ -63,9 +57,6 @@ class MCRoom(slixmpp.ClientXMPP):
         self.msg = message
         self.nick = nick
         self.add_event_handler("session_start", self.start)
-        # self.add_event_handler("groupchat_message", self.muc_message)
-        # self.add_event_handler("muc::%s::got_online" % self.room,
-        #                        self.muc_online)
 
     async def start(self, event):
         self.send_presence()
@@ -77,14 +68,6 @@ class MCRoom(slixmpp.ClientXMPP):
         self.send_message(mto=self.room,
                           mbody=self.msg, mtype='groupchat')
 
-    # def muc_message(self, msg):
-    #     self.send_message(mto="babamayu@conference.alumchat.fun",
-    #                       mbody=self.msg, mtype='groupchat')
-
-    # def muc_online(self, presence):
-    #     if presence['muc']['nick'] != self.nick:
-    #         print("%s has come online" % presence['muc']['nick'])
-
 
 class AddnewContact(slixmpp.ClientXMPP):
     def __init__(self, jid, password, name):
@@ -95,7 +78,6 @@ class AddnewContact(slixmpp.ClientXMPP):
     async def start(self, event):
         self.send_presence()
         await self.get_roster()
-        # self.register_plugin('xep_0100')
         self.send_presence(pto=self.name, pstatus=None,
                            ptype='subscribe', pfrom=self.jid)
         self.disconnect()
@@ -124,9 +106,7 @@ class GetContactInfo(slixmpp.ClientXMPP):
             print("El contacto existe")
             print("Mostrando información del contacto: " + self.contact)
             print(roster[self.contact])
-            # for key, value in roster[self.contact].items():
-            #     print(key, value)
-            for x in range(0, 10):
+            for x in range(0, 2):
                 print("")
         else:
             print("El contacto no existe")
@@ -185,7 +165,6 @@ class ChangeStatus(slixmpp.ClientXMPP):
         await self.get_roster()
         print("Status changed to: %s" % self.status)
         print("Status message: %s" % self.status_msg)
-        # self.disconnect()
 
 
 class GetNotifications(slixmpp.ClientXMPP):
@@ -218,8 +197,16 @@ class GetNotifications(slixmpp.ClientXMPP):
 
     def presence_subscribe(self, presence):
         print("%s wants to subscribe to you" % presence['from'])
-        self.send_presence(pto=presence['from'], ptype='subscribed')
-        self.send_presence(pto=presence['from'], ptype='subscribe')
+        print("Type 'yes' to accept or 'no' to reject")
+        op = input()
+        if op == 'yes':
+            self.send_presence(pto=presence['from'], ptype='subscribed')
+            self.send_presence(pto=presence['from'], ptype='subscribe')
+        elif op == 'no':
+            self.send_presence(pto=presence['from'], ptype='unsubscribed')
+            self.send_presence(pto=presence['from'], ptype='unsubscribe')
+        else:
+            print("Invalid option")
 
     def presence_subscribed(self, presence):
         print("%s is subscribed to you" % presence['from'])
@@ -311,8 +298,8 @@ if __name__ == '__main__':
     op = input("Seleccione una opción: ")
     if op == "1":
         jid = input("Introduzca su usuario con el dominio incluido: ")
-        password = input("Introduzca su contraseña: ")
-        ver = input('Introduzca nuevamente su contraseña: ')
+        password = getpass("Introduzca su contraseña: ")
+        ver = getpass('Introduzca nuevamente su contraseña: ')
         if password == ver:
             createNewAccount(jid, password)
         else:
@@ -323,20 +310,15 @@ if __name__ == '__main__':
     usuario = 'chrisbot@alumchat.fun'
     password = getpass('Ingrese su contraseña: ')
 
-    # usuario = 'christianp@alumchat.fun'
-
     menu()
     opcion = input('Ingrese una opcion: ')
     while opcion != '10':
         if opcion == '1':
-            # to = input('Ingrese el destinatario: ')
-            to = 'christianp@alumchat.fun'
+            to = input('Ingrese el destinatario: ')
             msg = input('Ingrese el mensaje: ')
-            # client.send_msg(to, msg)
             client = SendMsg(usuario, password, to, msg)
             client.register_plugin('xep_0030')  # Service Discovery
             client.register_plugin('xep_0199')  # XMPP Ping
-            # client.disconnect()
             client.connect()
             client.process(forever=False)
         elif opcion == '2':
