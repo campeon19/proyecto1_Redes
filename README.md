@@ -17,13 +17,13 @@ To run the program it is necessary to install the following libraries:
 
 ### Installing
 
-To install the xmpp library, run the following command on the command line
+To install the xmpppy library, run the following command on the command line
 
 ```
 pip install xmpppy
 ```
 
-To install the xmpp library, run the following command on the command line
+To install the slixmpp library, run the following command on the command line
 
 ```
 pip install slixmpp
