@@ -1,14 +1,20 @@
+# Universidad del Valle de Guatemala
+# Redes
+# Christian Pérez - 19710
+# Proyecto 1 - Uso de un protocolo existente
 
 import logging
 from getpass import getpass
 import asyncio
 import xmpp
 import os
-
 import slixmpp
 from slixmpp.exceptions import IqError, IqTimeout
 
+# This code line allows to use asyncio in Windows.
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+# Class to send a message to a user
 
 
 class SendMsg(slixmpp.ClientXMPP):
@@ -26,6 +32,8 @@ class SendMsg(slixmpp.ClientXMPP):
                           mbody=self.message, mtype='chat')
         self.disconnect()
 
+# Class to get the list of contacts
+
 
 class GetListContacts(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
@@ -35,19 +43,17 @@ class GetListContacts(slixmpp.ClientXMPP):
     async def start(self, event):
         self.send_presence()
         await self.get_roster()
+        print('Contactos: \n')
         contactos = []
-        roster = self.roster
-        for jid in roster:
-            contactos.append(jid)
+        roster = self.client_roster
+        for contact in roster:
+            contactos.append(contact)
 
         self.disconnect()
-
-        for x in range(0, 10):
-            print("")
-        print("Lista de contactos:")
         for contact in contactos:
             print(contact)
-        print(roster)
+
+# Class to send a message to group chat
 
 
 class MCRoom(slixmpp.ClientXMPP):
@@ -68,6 +74,8 @@ class MCRoom(slixmpp.ClientXMPP):
         self.send_message(mto=self.room,
                           mbody=self.msg, mtype='groupchat')
 
+# Class to add a new contact
+
 
 class AddnewContact(slixmpp.ClientXMPP):
     def __init__(self, jid, password, name):
@@ -81,6 +89,8 @@ class AddnewContact(slixmpp.ClientXMPP):
         self.send_presence(pto=self.name, pstatus=None,
                            ptype='subscribe', pfrom=self.jid)
         self.disconnect()
+
+# Class to get contact details
 
 
 class GetContactInfo(slixmpp.ClientXMPP):
@@ -113,6 +123,8 @@ class GetContactInfo(slixmpp.ClientXMPP):
 
         self.disconnect()
 
+# Class to get contact status
+
 
 class GetContactSatus(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
@@ -126,6 +138,8 @@ class GetContactSatus(slixmpp.ClientXMPP):
 
     def presence_available(self, presence):
         print("%s is available" % presence['from'])
+
+# Class to delete the account that is logged in
 
 
 class DeleteAccount(slixmpp.ClientXMPP):
@@ -152,6 +166,8 @@ class DeleteAccount(slixmpp.ClientXMPP):
             print('Error al eliminar cuenta: timeout')
             self.disconnect()
 
+# Class to change status and personal message
+
 
 class ChangeStatus(slixmpp.ClientXMPP):
     def __init__(self, jid, password, status, status_msg):
@@ -165,6 +181,8 @@ class ChangeStatus(slixmpp.ClientXMPP):
         await self.get_roster()
         print("Status changed to: %s" % self.status)
         print("Status message: %s" % self.status_msg)
+
+# Class to get notifications. It receives the messages, presence and contacts subscription requests
 
 
 class GetNotifications(slixmpp.ClientXMPP):
@@ -217,6 +235,8 @@ class GetNotifications(slixmpp.ClientXMPP):
     def groupchat_message(self, msg):
         print("%s in %s says: %s" % (msg['mucnick'], msg['from'], msg['body']))
 
+# Class to send a file (not implemented)
+
 
 class SendFile(slixmpp.ClientXMPP):
     def __init__(self, jid, password, to, file):
@@ -244,6 +264,8 @@ class SendFile(slixmpp.ClientXMPP):
 
         self.disconnect()
 
+# Function to create a new account
+
 
 def createNewAccount(jid, password):
     print("Creating new account...")
@@ -261,6 +283,7 @@ def menu_inicial():
     print("""
     1. Create new account
     2. Login
+    3. Exit
     """)
 
 
@@ -292,6 +315,11 @@ if __name__ == '__main__':
                                                             
     """)
 
+    # Discomment the following line to print debug information
+    #
+    # logging.basicConfig(level=logging.DEBUG,
+    #                     format='%(levelname)-8s %(message)s')
+
     print('Bienvenido al chat usando el protocolo xmpp')
 
     menu_inicial()
@@ -305,107 +333,110 @@ if __name__ == '__main__':
         else:
             print("Las contraseñas no coinciden")
             print('Cuenta no creada')
+    elif op == "2":
+        print('Inicio de sesion')
+        usuario = input("Introduzca su usuario con el dominio incluido: ")
+        password = getpass('Ingrese su contraseña: ')
 
-    print('Inicio de sesion')
-    usuario = 'chrisbot@alumchat.fun'
-    password = getpass('Ingrese su contraseña: ')
-
-    menu()
-    opcion = input('Ingrese una opcion: ')
-    while opcion != '10':
-        if opcion == '1':
-            to = input('Ingrese el destinatario: ')
-            msg = input('Ingrese el mensaje: ')
-            client = SendMsg(usuario, password, to, msg)
-            client.register_plugin('xep_0030')  # Service Discovery
-            client.register_plugin('xep_0199')  # XMPP Ping
-            client.connect()
-            client.process(forever=False)
-        elif opcion == '2':
-            client = GetListContacts(usuario, password)
-            client.register_plugin('xep_0030')  # Service Discovery
-            client.register_plugin('xep_0199')  # XMPP Ping
-            client.connect()
-            client.process(forever=False)
-        elif opcion == '3':
-            print('Mostrando estado de los contactos')
-            client = GetContactSatus(usuario, password)
-            client.register_plugin('xep_0030')  # Service Discovery
-            client.register_plugin('xep_0199')  # XMPP Ping
-            client.connect()
-            client.process(timeout=10)
-            client.disconnect()
-        elif opcion == '4':
-            room = input('Ingrese el nombre del sala: ')
-            msg = input('Ingrese el mensaje: ')
-            nick = input('Ingrese su nick: ')
-            client = MCRoom(usuario, password, room, msg, nick)
-            client.register_plugin('xep_0030')  # Service Discovery
-            client.register_plugin('xep_0199')  # XMPP Ping
-            client.register_plugin('xep_0045')  # Multi-User Chat
-            client.connect()
-            client.process(timeout=10)
-            client.disconnect()
-        elif opcion == '5':
-            contact = input('Ingrese el nombre del contacto: ')
-            client = GetContactInfo(usuario, password, contact)
-            client.connect()
-            client.process(forever=False)
-        elif opcion == '6':
-            print('Borrando cuenta')
-            print("Esta seguro de borrar su cuenta?")
-            q = input('Ingrese "si" para borrar: ')
-            if q == 'si':
-                client = DeleteAccount(usuario, password)
+        menu()
+        opcion = input('Ingrese una opcion: ')
+        while opcion != '10':
+            if opcion == '1':
+                to = input('Ingrese el destinatario: ')
+                msg = input('Ingrese el mensaje: ')
+                client = SendMsg(usuario, password, to, msg)
+                client.register_plugin('xep_0030')  # Service Discovery
+                client.register_plugin('xep_0199')  # XMPP Ping
+                client.connect()
+                client.process(forever=False)
+            elif opcion == '2':
+                client = GetListContacts(usuario, password)
+                client.register_plugin('xep_0030')  # Service Discovery
+                client.register_plugin('xep_0199')  # XMPP Ping
+                client.connect()
+                client.process(timeout=10)
+            elif opcion == '3':
+                print('Mostrando estado de los contactos')
+                client = GetContactSatus(usuario, password)
+                client.register_plugin('xep_0030')  # Service Discovery
+                client.register_plugin('xep_0199')  # XMPP Ping
+                client.connect()
+                client.process(timeout=10)
+                client.disconnect()
+            elif opcion == '4':
+                room = input('Ingrese el nombre del sala: ')
+                msg = input('Ingrese el mensaje: ')
+                nick = input('Ingrese su nick: ')
+                client = MCRoom(usuario, password, room, msg, nick)
+                client.register_plugin('xep_0030')  # Service Discovery
+                client.register_plugin('xep_0199')  # XMPP Ping
+                client.register_plugin('xep_0045')  # Multi-User Chat
+                client.connect()
+                client.process(timeout=10)
+                client.disconnect()
+            elif opcion == '5':
+                contact = input('Ingrese el nombre del contacto: ')
+                client = GetContactInfo(usuario, password, contact)
+                client.connect()
+                client.process(forever=False)
+            elif opcion == '6':
+                print('Borrando cuenta')
+                print("Esta seguro de borrar su cuenta?")
+                q = input('Ingrese "si" para borrar: ')
+                if q == 'si':
+                    client = DeleteAccount(usuario, password)
+                    client.register_plugin('xep_0030')  # Service Discovery
+                    client.register_plugin('xep_0199')  # XMPP Ping
+                    client.register_plugin('xep_0077')  # In-Band Registration
+                    client.register_plugin('xep_0100')
+                    client.connect()
+                    client.process(forever=False)
+                    print('Cuenta borrada')
+                    break
+                else:
+                    print('Cancelado')
+            elif opcion == '7':
+                print('Agregando nuevo contacto')
+                name = input('Ingrese el nombre: ')
+                client = AddnewContact(usuario, password, name)
                 client.register_plugin('xep_0030')  # Service Discovery
                 client.register_plugin('xep_0199')  # XMPP Ping
                 client.register_plugin('xep_0077')  # In-Band Registration
                 client.register_plugin('xep_0100')
                 client.connect()
                 client.process(forever=False)
-                print('Cuenta borrada')
-                break
-            else:
-                print('Cancelado')
-        elif opcion == '7':
-            print('Agregando nuevo contacto')
-            name = input('Ingrese el nombre: ')
-            client = AddnewContact(usuario, password, name)
-            client.register_plugin('xep_0030')  # Service Discovery
-            client.register_plugin('xep_0199')  # XMPP Ping
-            client.register_plugin('xep_0077')  # In-Band Registration
-            client.register_plugin('xep_0100')
-            client.connect()
-            client.process(forever=False)
-        elif opcion == '8':
-            print('Cambiando estado')
-            status = input(
-                'Ingrese su estado:\n away \n chat \n dnd \n xa \n ')
-            status_msg = input('Ingrese su mensaje de estado: ')
-            client = ChangeStatus(usuario, password, status, status_msg)
-            client.register_plugin('xep_0030')  # Service Discovery
-            client.register_plugin('xep_0199')  # XMPP Ping
-            client.connect()
-            client.process(timeout=20)
-            # client.disconnect()
-        elif opcion == '9':
-            print('Encender notificaciones')
-            tiempo = input(
-                'Ingrese el tiempo en segundos que desea activar las notificaciones: ')
-            if tiempo.isdigit():
-                client = GetNotifications(usuario, password)
+            elif opcion == '8':
+                print('Cambiando estado')
+                status = input(
+                    'Ingrese su estado:\n away \n chat \n dnd \n xa \n ')
+                status_msg = input('Ingrese su mensaje de estado: ')
+                client = ChangeStatus(usuario, password, status, status_msg)
                 client.register_plugin('xep_0030')  # Service Discovery
                 client.register_plugin('xep_0199')  # XMPP Ping
-                client.register_plugin('xep_0045')  # Multi-User Chat
                 client.connect()
-                client.process(timeout=int(tiempo))
-            else:
-                print('Lo que ingreso no es un numero. Cancelando')
+                client.process(timeout=20)
+                # client.disconnect()
+            elif opcion == '9':
+                print('Encender notificaciones')
+                tiempo = input(
+                    'Ingrese el tiempo en segundos que desea activar las notificaciones: ')
+                if tiempo.isdigit():
+                    client = GetNotifications(usuario, password)
+                    client.register_plugin('xep_0030')  # Service Discovery
+                    client.register_plugin('xep_0199')  # XMPP Ping
+                    client.register_plugin('xep_0045')  # Multi-User Chat
+                    client.connect()
+                    client.process(timeout=int(tiempo))
+                else:
+                    print('Lo que ingreso no es un numero. Cancelando')
 
-        menu()
-        # client.disconnect()
-        opcion = input('Ingrese una opcion: ')
+            menu()
+            opcion = input('Ingrese una opcion: ')
+        print("Client disconnected.")
+    elif op == "3":
+        print('Cerrando programa')
+    else:
+        print('Opcion no valida')
+        print('Cerrando programa')
 
-    # client.disconnect()
-    print("Client disconnected.")
     exit(0)
